@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>个人财务记账系统</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link
+            href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
+            rel="stylesheet"
+    />
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#3b82f6",
+                        secondary: "#60a5fa",
+                        accent: "#2563eb",
+                        neutral: "#f3f4f6",
+                        "neutral-dark": "#9ca3af",
+                        success: "#10b981",
+                        warning: "#f59e0b",
+                        danger: "#ef4444",
+                    },
+                    boxShadow: {
+                        card: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
+                        "card-hover": "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)",
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .input-field {
+                @apply w-full px-4 py-2 border border-neutral-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+            }
+            .btn-primary {
+                @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent;
+            }
+            .btn-secondary {
+                @apply bg-white text-primary border border-primary px-4 py-2 rounded-lg hover:bg-neutral;
+            }
+            .nav-link {
+                @apply flex items-center gap-2 px-4 py-3 rounded-lg text-gray-700 hover:bg-neutral;
+            }
+            .nav-link.active {
+                @apply bg-primary text-white;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-neutral">
+<div id="app"></div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
