@@ -2,11 +2,11 @@
   <div class="min-h-screen flex items-center justify-center p-4 bg-neutral">
     <div class="w-full max-w-md bg-white rounded-xl shadow-card p-8">
       <div class="flex justify-center mb-6">
-        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7090402f045f4aa588e11f39aaebbe8b~tplv-a9rns2rl98-image.image" alt="logo" class="h-20" />
+        <img src="../assets/logo.png" alt="logo" class="h-12" />
       </div>
 
       <div class="text-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">欢迎使用财务记账系统</h1>
+        <h1 class="text-2xl font-bold text-gray-800">欢迎使用个人财务记账系统</h1>
         <p class="text-gray-500 mt-2">科学管理个人财务，提升理财效率</p>
       </div>
 
@@ -22,8 +22,8 @@
       <!-- 登录 -->
       <form v-if="activeTab === 'login'">
         <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-medium mb-2">邮箱/手机号</label>
-          <input v-model="loginForm.username" class="input-field" placeholder="请输入邮箱或手机号" />
+          <label class="block text-gray-700 text-sm font-medium mb-2">邮箱/手机号/用户名</label>
+          <input v-model="loginForm.usernameOrEmailOrPhone" class="input-field" placeholder="请输入邮箱/手机号/用户名" />
         </div>
 
         <div class="mb-6">
@@ -51,19 +51,18 @@
         <div class="mb-4">
           <label class="block text-gray-700 text-sm font-medium mb-2">手机号</label>
           <div class="flex gap-2">
-            <input v-model="regForm.phone" class="input-field flex-1" placeholder="请输入手机号" />
-            <button type="button" class="btn-secondary" @click="getCode">获取验证码</button>
+            <input v-model="regForm.phone" class="input-field" placeholder="请输入手机号" />
           </div>
         </div>
 
         <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-medium mb-2">验证码</label>
-          <input v-model="regForm.code" class="input-field" placeholder="请输入验证码" />
+          <label class="block text-gray-700 text-sm font-medium mb-2">用户名</label>
+          <input v-model="regForm.username" class="input-field" placeholder="请输入用户名" />
         </div>
 
         <div class="mb-6">
           <label class="block text-gray-700 text-sm font-medium mb-2">密码</label>
-          <input v-model="regForm.password" type="password" class="input-field" placeholder="请设置密码（8-20位）" />
+          <input v-model="regForm.password" type="password" class="input-field" placeholder="请输入密码" />
         </div>
 
         <button type="submit" class="w-full btn-primary">注册</button>
@@ -73,7 +72,7 @@
 </template>
 
 <script>
-import { login, register } from '../api/auth'
+import { login, register } from '@/api/auth';
 
 export default {
   name: 'Auth',
@@ -81,37 +80,49 @@ export default {
     return {
       activeTab: 'login',
       remember: false,
-      loginForm: { username: '', password: '' },
-      regForm: { email: '', phone: '', code: '', password: '' }
-    }
+      loginForm: { usernameOrEmailOrPhone: '', password: '' },
+      regForm: { email: '', phone: '', username: '', password: '' }
+    };
   },
   methods: {
     async doLogin() {
       try {
-        const res = await login(this.loginForm)
-        // backend returns JSON string in our skeleton, handle both forms
-        let data = res.data
-        try { if (typeof data === 'string') data = JSON.parse(data) } catch(e){}
-        const token = data?.token || data
-        if (!token) { alert('登录失败：无 token'); return }
-        localStorage.setItem('token', token)
-        this.$router.push('/dashboard')
+        const res = await login(this.loginForm);
+        // 后端返回 { user, token }
+        const token = res.data.token || res.data.data?.token;
+        if (token) {
+          localStorage.setItem('token', token);
+          this.$router.push('/statistics');
+        } else {
+          alert('登录失败：后端未返回 token');
+        }
       } catch (err) {
-        alert('登录失败：' + (err.response?.data || err.message))
+        const msg = err.response?.data?.message || err.message;
+        alert('登录失败：' + msg);
       }
     },
     async doRegister() {
       try {
-        await register({ username: this.regForm.email || this.regForm.phone, password: this.regForm.password, email: this.regForm.email, phone: this.regForm.phone })
-        alert('注册成功，请登录')
-        this.activeTab = 'login'
+        const payload = {
+          email: this.regForm.email,
+          phone: this.regForm.phone || null,
+          username: this.regForm.username || this.regForm.email,
+          password: this.regForm.password
+        };
+        const res = await register(payload);
+        const token = res.data.token || res.data.data?.token;
+        if (token) {
+          localStorage.setItem('token', token);
+          this.$router.push('/statistics');
+        } else {
+          alert('注册成功，请手动登录（未返回 token）');
+          this.activeTab = 'login';
+        }
       } catch (err) {
-        alert('注册失败：' + (err.response?.data || err.message))
+        const msg = err.response?.data?.message || err.message;
+        alert('注册失败：' + msg);
       }
-    },
-    getCode() {
-      alert('发送验证码（开发模式：跳过）')
     }
   }
-}
+};
 </script>
