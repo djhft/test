@@ -23,22 +23,27 @@ public class AiRequestsServiceImpl extends ServiceImpl<AiRequestsMapper, AiReque
     @Autowired
     private AiRequestsMapper aiRequestMapper;
 
+//    @Override
+//    public AiRequests createRequest(Long userId, Map<String, Object> input) {
+//        AiRequests r = new AiRequests();
+//        r.setUserId(userId);
+//        r.setInput(JsonUtil.toJson(input));
+//        r.setStatus("pending");
+//        aiRequestMapper.insert(r);
+//        // 简单同步示例分析：生成 fake result，更新表
+//        Map<String, Object> fake = Map.of(
+//                "summary", "示例分析：你的支出集中在餐饮与购物。",
+//                "suggestions", new String[]{"减少外出就餐", "制定购物预算"}
+//        );
+//        r.setResult(JsonUtil.toJson(fake));
+//        r.setStatus("done");
+//        aiRequestMapper.updateById(r);
+//        return r;
+//    }
+
     @Override
     public AiRequests createRequest(Long userId, Map<String, Object> input) {
-        AiRequests r = new AiRequests();
-        r.setUserId(userId);
-        r.setInput(JsonUtil.toJson(input));
-        r.setStatus("pending");
-        aiRequestMapper.insert(r);
-        // 简单同步示例分析：生成 fake result，更新表
-        Map<String, Object> fake = Map.of(
-                "summary", "示例分析：你的支出集中在餐饮与购物。",
-                "suggestions", new String[]{"减少外出就餐", "制定购物预算"}
-        );
-        r.setResult(JsonUtil.toJson(fake));
-        r.setStatus("done");
-        aiRequestMapper.updateById(r);
-        return r;
+        return null;
     }
 
     @Override

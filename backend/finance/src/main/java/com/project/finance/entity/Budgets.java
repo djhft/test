@@ -53,5 +53,10 @@ public class Budgets implements Serializable {
     @TableField("updated_at")
     private LocalDateTime updatedAt;
 
+    @TableField("used")
+    private BigDecimal used;
+
+    @TableField("alert")
+    private Integer alert;
 
 }

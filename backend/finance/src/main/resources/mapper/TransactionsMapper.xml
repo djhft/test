@@ -2,4 +2,41 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.project.finance.mapper.TransactionsMapper">
 
+
+    <select id="findByUserIdAndTypeAndDateBetween" resultType="com.project.finance.DTO.CategoryExpenseDTO">
+#         根据时间获取全部支出数据,并根据category_id进行汇总
+        SELECT
+            category_id,
+            SUM(amount) AS total_amount
+        FROM transactions
+        where user_id = #{uid}
+          and type = 'EXPENSE'
+        and date BETWEEN #{start} AND #{end}
+        GROUP BY category_id;
+
+    </select>
+    <select id="findSummaryByUserIdAndTypeAndDateBetween" resultType="com.project.finance.DTO.SummaryDTO">
+        SELECT
+            date,
+            type,
+            SUM(amount) AS total_amount
+        FROM transactions
+        where user_id = #{uid}
+          and date BETWEEN #{start} AND #{end}
+          and type = 'EXPENSE'
+        GROUP BY date,type;
+
+    </select>
+    <select id="findIncomeSummaryByUserIdAndTypeAndDateBetween"
+            resultType="com.project.finance.DTO.SummaryDTO">
+        SELECT
+            date,
+            type,
+            SUM(amount) AS total_amount
+        FROM transactions
+        where user_id = #{uid}
+          and date BETWEEN #{start} AND #{end}
+          and type = 'INCOME'
+        GROUP BY date,type;
+    </select>
 </mapper>

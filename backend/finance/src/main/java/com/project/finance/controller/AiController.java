@@ -26,13 +26,13 @@ public class AiController {
     @Autowired
     private IAiRequestsService aiService;
 
-    @PostMapping("/analysis")
-    public Map<String, Object> analysis(@RequestBody Map<String,Object> body, HttpServletRequest request) {
-        Long uid = (Long) request.getAttribute("userId");
-        AiRequests r = aiService.createRequest(uid, body);
-        // 返回示例结果（同步）
-        return Map.of("id", r.getId(), "result", JsonUtil.fromJson(r.getResult(), Map.class));
-    }
+//    @PostMapping("/analysis")
+//    public Map<String, Object> analysis(@RequestBody Map<String,Object> body, HttpServletRequest request) {
+//        Long uid = (Long) request.getAttribute("userId");
+//        AiRequests r = aiService.createRequest(uid, body);
+//        // 返回示例结果（同步）
+//        return Map.of("id", r.getId(), "result", JsonUtil.fromJson(r.getResult(), Map.class));
+//    }
 
     @GetMapping("/analysis/{id}")
     public AiRequests get(@PathVariable Long id, HttpServletRequest request) {

@@ -94,7 +94,7 @@
 
           <div>
             <label class="text-sm text-gray-600 mb-3 block">附件（票据图片）</label>
-            <Uploader @uploaded="onUploaded" />
+            <Uploader ref="uploader" @uploaded="onUploaded" />
           </div>
 
           <div class="flex gap-3 pt-4">
@@ -158,7 +158,7 @@ export default {
         description: '',
         date: now.toISOString().slice(0,10),
         time: now.toTimeString().slice(0,5),
-        attachmentUrls: []
+        attachmentUrls: ''
       },
       recognition: { visible: false, type: '', amount: '', category: '', date: '' },
       consume_grids: [
@@ -192,8 +192,7 @@ export default {
       this.form.category = '';
     },
     onUploaded(urls) {
-      if (Array.isArray(urls)) this.form.attachmentUrls.push(...urls)
-      else if (typeof urls === 'string') this.form.attachmentUrls.push(urls)
+      this.form.attachmentUrls = urls;
     },
     async save() {
       this.showError = true;
@@ -216,7 +215,6 @@ export default {
         return
       }
 
-
       this.showError = false;
 
       const payload = {
@@ -226,10 +224,9 @@ export default {
         category: this.form.category,
         description: this.form.description,
         transactionDate: this.form.date,
-        attachmentUrls: JSON.stringify(this.form.attachmentUrls)
+        attachmentUrls: this.form.attachmentUrls
       }
       try {
-        console.log(payload)
         await createTransaction(payload)
         ElMessage({
           message: '保存成功',
@@ -237,6 +234,8 @@ export default {
           offset: 60,
           customClass: 'top-message'
         });
+        // 保存成功后清除图片
+        this.$refs.uploader.clear_url();
         this.reset()
       } catch (e) {
         ElMessage({
@@ -247,15 +246,19 @@ export default {
         });
       }
     },
+
     reset() {
       this.form.amount = 0;
       this.form.category = '';
       this.form.description = '';
       this.form.attachmentUrls = [];
       this.showError = false;
+      // 重置时也清除图片
+      if (this.$refs.uploader) {
+        this.$refs.uploader.clear();
+      }
     },
-    editRecognition() { /* placeholder */ },
-    saveRecognition() { /* placeholder */ }
+
   }
 }
 </script>

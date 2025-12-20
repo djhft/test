@@ -23,14 +23,15 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
 
     @Override
     public Users findByEmailOrUsernameOrPhone(String key) {
-        System.out.println("0000");
         if (key == null) return null;
         try {
             QueryWrapper<Users> qw = new QueryWrapper<>();
-            qw.eq("email", key).or().eq("username", key).or().eq("phone", key);
+            qw.eq("email", key)
+                    .or()
+                    .eq("username", key)
+                    .or()
+                    .eq("phone", key);
             Users user = userMapper.selectOne(qw);
-            System.out.println("9999");
-            System.out.println(user);
             return user;
         } catch (Exception e) {
             System.out.println("Error occurred: " + e.getMessage());

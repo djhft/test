@@ -26,16 +26,30 @@ public class SavingsController {
 
     @GetMapping
     public List<SavingsAccounts> list(HttpServletRequest request) {
-        Long uid = (Long) request.getAttribute("userId");
-        return savingsMapper.selectList(null).stream().filter(s -> s.getUserId().equals(uid)).toList();
+        try {
+            System.out.println("1111");
+            Long uid = (Long) request.getAttribute("userId");
+            System.out.println(savingsMapper.selectList(null).stream().filter(s -> s.getUserId().equals(uid)).toList());
+            return savingsMapper.selectList(null).stream().filter(s -> s.getUserId().equals(uid)).toList();
+        } catch (Exception e) {
+            throw new RuntimeException("Not found");
+        }
+
     }
 
     @PostMapping
     public SavingsAccounts create(@RequestBody SavingsAccounts s, HttpServletRequest request) {
-        Long uid = (Long) request.getAttribute("userId");
-        s.setUserId(uid);
-        savingsMapper.insert(s);
-        return s;
+        try {
+            System.out.println(s);
+            Long uid = (Long) request.getAttribute("userId");
+            s.setUserId(uid);
+            savingsMapper.insert(s);
+            return s;
+        }catch (Exception e){
+            System.out.println(e);
+            throw new RuntimeException("Not found");
+        }
+
     }
 
     @PutMapping("/{id}")
@@ -51,6 +65,8 @@ public class SavingsController {
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id, HttpServletRequest request) {
+        System.out.println("delete");
+        System.out.println(id);
         Long uid = (Long) request.getAttribute("userId");
         SavingsAccounts exist = savingsMapper.selectById(id);
         if (exist == null || !exist.getUserId().equals(uid)) throw new RuntimeException("Not found");

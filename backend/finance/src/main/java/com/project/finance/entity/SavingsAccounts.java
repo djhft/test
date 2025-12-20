@@ -1,5 +1,6 @@
 package com.project.finance.entity;
 
+import java.io.Serial;
 import java.math.BigDecimal;
 
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -27,6 +28,7 @@ import lombok.experimental.Accessors;
 @TableName("savings_accounts")
 public class SavingsAccounts implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
@@ -53,5 +55,10 @@ public class SavingsAccounts implements Serializable {
     @TableField("updated_at")
     private LocalDateTime updatedAt;
 
+    @TableField("describe_text")
+    private String describeText;
+
+    @TableField("category")
+    private String category;
 
 }

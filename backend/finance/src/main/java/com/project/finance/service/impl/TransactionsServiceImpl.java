@@ -1,14 +1,19 @@
 package com.project.finance.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.project.finance.DTO.CategoryExpenseDTO;
+import com.project.finance.DTO.SummaryDTO;
 import com.project.finance.entity.Transactions;
+import com.project.finance.mapper.BudgetsMapper;
 import com.project.finance.mapper.TransactionsMapper;
 import com.project.finance.service.ITransactionsService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.apache.ibatis.transaction.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * <p>
@@ -22,6 +27,9 @@ import org.springframework.stereotype.Service;
 public class TransactionsServiceImpl extends ServiceImpl<TransactionsMapper, Transactions> implements ITransactionsService {
     @Autowired
     private TransactionsMapper transactionMapper;
+
+    @Autowired
+    private BudgetsMapper budgetsMapper;
 
     @Override
     public Page<Transactions> pageByUser(Long userId, int page, int pageSize, String start, String end, String type, Long categoryId) {
@@ -37,6 +45,12 @@ public class TransactionsServiceImpl extends ServiceImpl<TransactionsMapper, Tra
 
     @Override
     public Transactions create(Transactions t) {
+        System.out.println(t);
+        UpdateWrapper updateWrapper = new UpdateWrapper();
+        updateWrapper.setSql("used = used + " + t.getAmount());
+        updateWrapper.eq("user_id", t.getUserId());
+        updateWrapper.eq("category_id", t.getCategoryId());
+        budgetsMapper.update(null,updateWrapper);
         transactionMapper.insert(t);
         return t;
     }
@@ -55,5 +69,23 @@ public class TransactionsServiceImpl extends ServiceImpl<TransactionsMapper, Tra
     @Override
     public void delete(Long id) {
         transactionMapper.deleteById(id);
+    }
+
+    @Override
+    public List<CategoryExpenseDTO> findByUserIdAndTypeAndDateBetween(Long uid, String start, String end) {
+        //根据时间获取全部支出数据,并根据category_id进行汇总
+        return transactionMapper.findByUserIdAndTypeAndDateBetween(uid, start, end);
+
+
+    }
+
+    @Override
+    public List<SummaryDTO> findExpenseSummaryByUserIdAndTypeAndDateBetween(Long uid, String start, String end) {
+        return transactionMapper.findSummaryByUserIdAndTypeAndDateBetween(uid, start, end);
+    }
+
+    @Override
+    public List<SummaryDTO> findIncomeSummaryByUserIdAndTypeAndDateBetween(Long uid, String start, String end) {
+        return transactionMapper.findIncomeSummaryByUserIdAndTypeAndDateBetween(uid, start, end);
     }
 }

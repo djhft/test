@@ -18,10 +18,10 @@
                  :key="item.id"
                  @click="selectCategory(item)"
                  :class="['cursor-pointer rounded-xl p-3 flex flex-col items-center transition-all duration-200',
-                          newBudget.category === item.text
-                            ? 'bg-gradient-to-br from-blue-50 to-blue-50 border-2 border-blue-300 shadow-md transform scale-105'
-                            : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent hover:shadow-sm',
-                          showError && !newBudget.category ? 'border-red-500 animate-pulse' : '']">
+                    newBudget.category === item.image
+                      ? 'bg-gradient-to-br from-blue-50 to-blue-50 border-2 border-blue-300 shadow-md transform scale-105'
+                      : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent hover:shadow-sm',
+                    showError && !newBudget.category ? 'border-red-500 animate-pulse' : '']">
               <img :src="item.image" :alt="item.text" class="w-8 h-8 mb-1" />
               <span class="text-xs text-gray-700">{{ item.text }}</span>
             </div>
@@ -146,35 +146,49 @@
     </div>
 
     <!-- ================= 编辑弹窗（Element Plus） ================= -->
+    <!-- 编辑弹窗部分 -->
     <el-dialog
         v-model="editDialogVisible"
-        title="修改预算金额"
-        width="360px"
+        title="修改预算设置"
+        width="400px"
     >
       <div class="space-y-4">
         <div class="text-sm text-gray-600">
           分类：<span class="font-medium">{{ editForm.category }}</span>
         </div>
 
-        <el-input
-            v-model.number="editForm.amount"
-            type="number"
-            placeholder="请输入新的预算金额"
-        >
-          <template #prefix>¥</template>
-        </el-input>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">预算金额</label>
+          <el-input
+              v-model.number="editForm.amount"
+              type="number"
+              placeholder="请输入新的预算金额"
+          >
+            <template #prefix>¥</template>
+          </el-input>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">预警阈值</label>
+          <el-select v-model.number="editForm.alert" class="w-full">
+            <el-option :value="80" label="80% - 温馨提醒" />
+            <el-option :value="90" label="90% - 严重警告" />
+            <el-option :value="100" label="100% - 超支提醒" />
+          </el-select>
+        </div>
       </div>
 
       <template #footer>
         <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmEdit">确认</el-button>
+        <el-button type="primary" @click="confirmEdit(b)">确认</el-button>
       </template>
     </el-dialog>
+
   </div>
 </template>
 
 <script>
-import { ElMessage } from 'element-plus'
+import {ElMessage} from 'element-plus'
 import eat from "@/assets/icon/eat.png";
 import shopping from "@/assets/icon/shopping.png";
 import sock from "@/assets/icon/sock.png";
@@ -185,6 +199,7 @@ import education from "@/assets/icon/education.png";
 import children from "@/assets/icon/children.png";
 import gift from "@/assets/icon/gift.png";
 import pet from "@/assets/icon/pet.png";
+import {createBudget, deleteBudget, getBudgets, updateBudget} from "@/api/budgets.js";
 
 export default {
   name: 'Budget',
@@ -199,59 +214,117 @@ export default {
         alert: 80
       },
       consume_grids: [
-        { id: 1, image: eat, text: "三餐" },
-        { id: 2, image: shopping, text: "购物" },
-        { id: 3, image: sock, text: "零食" },
-        { id: 4, image: fruit, text: "水果" },
-        { id: 5, image: plane, text: "出行" },
-        { id: 6, image: car, text: "修车" },
-        { id: 7, image: education, text: "学习" },
-        { id: 8, image: children, text: "小孩" },
-        { id: 9, image: gift, text: "送礼" },
-        { id: 10, image: pet, text: "宠物" }
+        { id: 1,value:'eat', image: eat, text: "三餐" },
+        { id: 2,value:'shopping', image: shopping, text: "购物" },
+        { id: 3,value:'sock', image: sock, text: "零食" },
+        { id: 4,value:'fruit', image: fruit, text: "水果" },
+        { id: 5,value:'plane', image: plane, text: "出行" },
+        { id: 6,value:'car', image: car, text: "修车" },
+        { id: 7,value:'education', image: education, text: "学习" },
+        { id: 8,value:'children', image: children, text: "小孩" },
+        { id: 9,value:'gift', image: gift, text: "送礼" },
+        { id: 10,value: 'pet', image: pet, text: "宠物" }
       ],
       budgets: [
-        {category: '餐饮', amount: 2000, used: 1560, image: eat},
-        {category: '购物', amount: 3000, used: 2850, image: shopping}
+        {category: '餐饮', amount: 2000, used: 1560, image: 'eat'},
+        {category: '购物', amount: 3000, used: 2850, image: 'shopping'},
       ],
 
       /* ===== 新增（仅用于当前预算编辑） ===== */
       editDialogVisible: false,
       editIndex: null,
+// 在 data 中更新 editForm 的结构
       editForm: {
         category: '',
-        amount: 0
-      }
+        amount: 0,
+        alert: 80  // 添加预警阈值
+      },
     }
+  },
+  created() {
+    this.getAllBudgets()
   },
   methods: {
     selectCategory(item) {
-      this.newBudget.category = item.text;
+      this.newBudget.category = item.image;
       this.showError = false;
     },
 
-    addBudget() {
+    async getAllBudgets() {
+      try {
+        const request = await getBudgets();
+        for (let i = 0; i < request.data.length; i++) {
+          request.data[i].category = this.getConsumeNameById(request.data[i].categoryId)
+          request.data[i].image = this.getConsumeImage(request.data[i].categoryId).image
+          console.log(request.data[i].image)
+
+        }
+        this.budgets = request.data
+        console.log(request)
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    getConsumeImage(category) {
+      return this.consume_grids.find(c => String(c.id) === String(category))
+    },
+
+    getConsumeNameById(id) {
+      const cat = this.consume_grids.find(c => c.id === id)
+      return cat ? cat.text : '其他'
+    },
+
+    getConsumeIdByImage(image) {
+      const cat = this.consume_grids.find(c => c.image === image)
+      return cat ? cat.id : 1
+    },
+
+    async addBudget() {
       this.showError = true
       if (!this.newBudget.category || !this.newBudget.amount || !this.newBudget.month) {
         ElMessage.warning('请填写完整信息')
         return
       }
 
-      const selectedCategory = this.consume_grids.find(
-          item => item.text === this.newBudget.category
-      )
-
-      this.budgets.push({
-        category: this.newBudget.category,
-        amount: this.newBudget.amount,
-        used: 0,
-        image: selectedCategory.image
+      // 检查是否已存在相同分类的预算
+      const existingBudget = this.budgets.find(budget => {
+        const selectedCategory = this.consume_grids.find(
+            item => item.image === this.newBudget.category
+        )
+        return budget.categoryId === this.getConsumeIdByImage(this.newBudget.category)
       })
 
-      ElMessage.success('预算已保存')
-      this.clearBudget()
-    },
+      if (existingBudget) {
+        ElMessage.warning('该分类已存在预算，请勿重复添加')
+        return
+      }
 
+      try {
+        const budgetData = {
+          categoryId: this.getConsumeIdByImage(this.newBudget.category),
+          amount: this.newBudget.amount,
+          periodStart: this.newBudget.month + '-01',
+          periodEnd: this.getMonthLastDay(this.newBudget.month),
+          alert: this.newBudget.alert,
+          used: 0
+        }
+        console.log(budgetData)
+        await createBudget(budgetData)
+        ElMessage.success('预算已保存')
+        this.clearBudget()
+        await this.getAllBudgets() // 重新获取列表
+      } catch (error) {
+        console.error('创建预算失败:', error)
+        ElMessage.error('创建预算失败：' + (error.response?.data || error.message))
+      }
+    }
+    ,
+    getMonthLastDay(yearMonth) {
+      const [year, month] = yearMonth.split('-');
+      // 创建下个月的第一天，然后减去一天，就是这个月的最后一天
+      const lastDay = new Date(year, month, 0).getDate();
+      return `${yearMonth}-${lastDay.toString().padStart(2, '0')}`;
+    },
     clearBudget() {
       const now = new Date()
       this.newBudget = {
@@ -268,23 +341,55 @@ export default {
       this.editIndex = index
       this.editForm.category = budget.category
       this.editForm.amount = budget.amount
+      this.editForm.alert = budget.alert || 80  // 设置默认值
       this.editDialogVisible = true
     },
 
-    confirmEdit() {
+    async confirmEdit() {
       if (!this.editForm.amount) {
         ElMessage.warning('请输入预算金额')
         return
       }
-      this.budgets[this.editIndex].amount = this.editForm.amount
-      this.editDialogVisible = false
-      ElMessage.success('预算已更新')
-    },
 
-    deleteBudget(index) {
-      this.budgets.splice(index, 1)
-      ElMessage.success('预算已删除')
+      try {
+        const budgetId = this.budgets[this.editIndex].id
+        const updateData = {
+          amount: this.editForm.amount,
+          alert: this.editForm.alert
+        }
+
+        // 调用 updateBudget API 更新数据
+        await updateBudget(budgetId, updateData)
+
+        // 更新本地数据
+        this.budgets[this.editIndex] = {
+          ...this.budgets[this.editIndex],
+          ...updateData
+        }
+
+        this.editDialogVisible = false
+        ElMessage.success('预算设置已更新')
+      } catch (error) {
+        console.error('更新预算失败:', error)
+        ElMessage.error('更新预算失败：' + (error.response?.data || error.message))
+      }
     }
+    ,
+
+    async deleteBudget(index) {
+      try {
+        const budgetId = this.budgets[index].id
+        await deleteBudget(budgetId)  // 调用删除API
+
+        // API调用成功后，从本地数组中移除该项
+        this.budgets.splice(index, 1)
+        ElMessage.success('预算已删除')
+      } catch (error) {
+        console.error('删除预算失败:', error)
+        ElMessage.error('删除预算失败：' + (error.response?.data || error.message))
+      }
+    }
+
   }
 }
 </script>

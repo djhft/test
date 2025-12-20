@@ -33,7 +33,7 @@
               <div class="relative">
                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">¥</span>
                 <input
-                    v-model.number="goal.amount"
+                    v-model.number="goal.targetAmount"
                     type="number"
                     class="input-field pl-10 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     :class="{ 'border-red-500 animate-pulse': showError && !goal.amount }"
@@ -48,7 +48,7 @@
                 <i class="fas fa-calendar mr-2 text-blue-500"></i>目标日期
               </label>
               <input
-                  v-model="goal.date"
+                  v-model="goal.targetDate"
                   type="date"
                   :min="minDate"
                   class="input-field rounded-xl transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -141,17 +141,17 @@
                   <div>
                     <h4 class="font-medium text-gray-800">{{ g.name }}</h4>
                     <div class="text-sm text-gray-500">
-                      <span class="mr-3">目标 ¥{{ formatAmount(g.amount) }}</span>
-                      <span>已存 ¥{{ formatAmount(g.current) }}</span>
+                      <span class="mr-3">目标 ¥{{ formatAmount(g.targetAmount) }}</span>
+                      <span>已存 ¥{{ formatAmount(g.currentAmount) }}</span>
                     </div>
                   </div>
                 </div>
                 <div class="text-right">
-                  <div class="text-base font-medium" :class="g.current >= g.amount ? 'text-green-500' : 'text-gray-800'">
-                    {{ Math.round(g.current / g.amount * 100) }}%
+                  <div class="text-base font-medium" :class="g.currentAmount >= g.targetAmount ? 'text-green-500' : 'text-gray-800'">
+                    {{ Math.round(g.currentAmount / g.targetAmount * 100) }}%
                   </div>
                   <div class="text-sm text-gray-500">
-                    剩余 ¥{{ formatAmount(Math.max(0, g.amount - g.current)) }}
+                    剩余 ¥{{ formatAmount(Math.max(0, g.targetAmount - g.currentAmount)) }}
                   </div>
                 </div>
               </div>
@@ -162,13 +162,13 @@
                   <div
                       class="h-3 rounded-full transition-all duration-500 ease-out relative"
                       :class="getProgressClass(g)"
-                      :style="{ width: Math.min(g.current / g.amount * 100, 100) + '%' }"
+                      :style="{ width: Math.min(g.currentAmount / g.targetAmount * 100, 100) + '%' }"
                   >
-                    <div v-if="g.current >= g.amount"
+                    <div v-if="g.currentAmount >= g.targetAmount"
                          class="absolute right-0 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-white rounded-full animate-pulse"></div>
                   </div>
                 </div>
-                <div v-if="g.current >= g.amount" class="absolute -top-6 right-0 text-xs text-green-500 font-medium flex items-center">
+                <div v-if="g.currentAmount >= g.targetAmount" class="absolute -top-6 right-0 text-xs text-green-500 font-medium flex items-center">
                   <i class="fas fa-check-circle mr-1"></i>
                   已达成
                 </div>
@@ -226,7 +226,7 @@
         <template #footer>
           <span class="dialog-footer">
             <button class="btn-secondary" @click="depositDialog.visible = false">取消</button>
-            <button class="btn-primary ml-2" @click="confirmDeposit">确认</button>
+            <button class="btn-primary ml-2" @click="confirmDeposit(g)">确认</button>
           </span>
         </template>
       </el-dialog>
@@ -247,7 +247,7 @@
             <div class="relative">
               <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">¥</span>
               <input
-                  v-model.number="editingGoal.amount"
+                  v-model.number="editingGoal.targetAmount"
                   type="number"
                   class="input-field pl-10 rounded-xl"
                   placeholder="请输入目标金额"
@@ -257,7 +257,7 @@
           <div>
             <label class="text-sm text-gray-600 mb-2 block">目标日期</label>
             <input
-                v-model="editingGoal.date"
+                v-model="editingGoal.targetDate"
                 type="date"
                 :min="minDate"
                 class="input-field rounded-xl"
@@ -296,7 +296,7 @@
           <div>
             <label class="text-sm text-gray-600 mb-2 block">描述</label>
             <textarea
-                v-model="editingGoal.description"
+                v-model="editingGoal.describeText"
                 rows="3"
                 class="input-field rounded-xl"
                 placeholder="添加目标描述（可选）"
@@ -333,6 +333,7 @@ import wedding from '@/assets/icon/wedding.png'
 import vehicle from '@/assets/icon/vehicle.png'
 import renovation from '@/assets/icon/renovation.png'
 import other from '@/assets/icon/other.png'
+import {createSavings, deleteSavings, getSavings, updateSavings} from "@/api/savings.js";
 
 export default {
   name: 'Savings',
@@ -343,11 +344,11 @@ export default {
       showEditCategories: false,
       goal: {
         name: '',
-        amount: 0,
-        date: '',
+        targetAmount: 0,  // 修改字段名
+        currentAmount: 0,
+        targetDate: '',   // 修改字段名
         category: 'travel',
-        description: '',
-        current: 0
+        description: ''
       },
       editingGoal: null,
       editDialog: false,
@@ -369,17 +370,7 @@ export default {
         { value: 'renovation', label: '装修', image: renovation },
         { value: 'other', label: '其他', image: other }
       ],
-      goals: [
-        {
-          id: 1,
-          name: '旅行基金',
-          amount: 50000,
-          current: 35000,
-          date: '2024-12-31',
-          category: 'travel',
-          description: ''
-        }
-      ],
+      goals: [],
       depositDialog: {
         visible: false,
         amount: 0,
@@ -392,16 +383,13 @@ export default {
       return new Date().toISOString().split('T')[0]
     }
   },
-  mounted() {
-    document.addEventListener('click', this.handleClickOutside)
-  },
-  beforeUnmount() {
-    document.removeEventListener('click', this.handleClickOutside)
+  created() {
+    this.get_goal();
   },
   methods: {
     // 格式化金额
     formatAmount(amount) {
-      return amount.toLocaleString()
+      return Number(amount).toFixed(2)
     },
     // 获取分类图片
     getCategoryImage(category) {
@@ -415,8 +403,9 @@ export default {
     },
     // 获取进度条样式
     getProgressClass(goal) {
-      if (goal.current >= goal.amount) return 'bg-green-500'
-      if (goal.current / goal.amount >= 0.8) return 'bg-yellow-500'
+      const progress = Number(goal.currentAmount) / Number(goal.targetAmount)
+      if (progress >= 1) return 'bg-green-500'
+      if (progress >= 0.8) return 'bg-yellow-500'
       return 'bg-blue-500'
     },
     // 切换分类选择器
@@ -437,39 +426,37 @@ export default {
       this.editingGoal.category = cat.value
       this.showEditCategories = false
     },
-    // 处理外部点击
-    handleClickOutside(e) {
-      if (!e.target.closest('.relative')) {
-        this.showCategories = false
-        this.showEditCategories = false
-      }
-    },
     // 添加目标
-    addGoal() {
+    async addGoal() {
       this.showError = true
-
       if (!this.validateGoal()) {
         return
       }
 
-      const newGoal = {
-        ...this.goal,
-        id: Date.now()
+      try {
+        await createSavings(this.goal)
+        ElMessage({
+          message: '目标已创建',
+          type: 'success',
+          offset: 60,
+          customClass: 'top-message'
+        })
+        this.resetGoal()
+        await this.get_goal()  // 重新获取列表
+      } catch (error) {
+        console.error('创建目标失败:', error)
+        ElMessage({
+          message: '创建失败：' + (error.response?.data || error.message),
+          type: 'error',
+          offset: 60,
+          customClass: 'top-message'
+        })
       }
-      this.goals.push(newGoal)
-
-      ElMessage({
-        message: '目标已创建',
-        type: 'success',
-        offset: 60,
-        customClass: 'top-message'
-      })
-
-      this.resetGoal()
     },
     // 验证目标信息
     validateGoal() {
-      if (!this.goal.name) {
+      console.log(this.goal)
+      if (!this.goal.name?.trim()) {
         ElMessage({
           message: '请输入目标名称',
           type: 'warning',
@@ -478,7 +465,7 @@ export default {
         })
         return false
       }
-      if (!this.goal.amount || this.goal.amount <= 0) {
+      if (!this.goal.targetAmount || this.goal.targetAmount <= 0) {
         ElMessage({
           message: '请输入有效的目标金额',
           type: 'warning',
@@ -487,7 +474,7 @@ export default {
         })
         return false
       }
-      if (!this.goal.date) {
+      if (!this.goal.targetDate) {
         ElMessage({
           message: '请选择目标日期',
           type: 'warning',
@@ -502,11 +489,11 @@ export default {
     resetGoal() {
       this.goal = {
         name: '',
-        amount: 0,
-        date: '',
+        targetAmount: 0,
+        currentAmount: 0,
+        targetDate: '',
         category: 'travel',
-        description: '',
-        current: 0
+        description: ''
       }
       this.showError = false
     },
@@ -519,7 +506,7 @@ export default {
       }
     },
     // 确认存款
-    confirmDeposit() {
+    async confirmDeposit() {
       if (!this.depositDialog.amount || this.depositDialog.amount <= 0) {
         ElMessage({
           message: '请输入有效的存款金额',
@@ -530,43 +517,81 @@ export default {
         return
       }
 
-      this.depositDialog.currentGoal.current += this.depositDialog.amount
-      this.depositDialog.visible = false
+      try {
+        const newAmount = Number(this.depositDialog.currentGoal.currentAmount) + Number(this.depositDialog.amount)
+        await updateSavings(this.depositDialog.currentGoal.id, {
+          currentAmount: newAmount
+        })
 
-      ElMessage({
-        message: '存款成功',
-        type: 'success',
-        offset: 60,
-        customClass: 'top-message'
-      })
+        ElMessage({
+          message: '存款成功',
+          type: 'success',
+          offset: 60,
+          customClass: 'top-message'
+        })
+
+        this.depositDialog.currentGoal.currentAmount = newAmount
+        this.depositDialog.visible = false
+      } catch (error) {
+        console.error('存款失败:', error)
+        ElMessage({
+          message: '存款失败：' + (error.response?.data || error.message),
+          type: 'error',
+          offset: 60,
+          customClass: 'top-message'
+        })
+      }
+    },
+    // 获取目标列表
+    async get_goal() {
+      try {
+        const response = await getSavings()
+        this.goals = response.data || []  // 直接赋值，不需要push
+      } catch (error) {
+        console.error('获取目标列表失败:', error)
+        ElMessage({
+          message: '获取列表失败：' + (error.response?.data || error.message),
+          type: 'error',
+          offset: 60,
+          customClass: 'top-message'
+        })
+      }
     },
     // 编辑目标
     edit(goal) {
+      console.log(goal)
       this.editingGoal = { ...goal }
       this.editDialog = true
     },
     // 更新目标
-    updateGoal() {
+    async updateGoal() {
       if (!this.validateEditGoal()) {
         return
       }
 
-      const index = this.goals.findIndex(g => g.id === this.editingGoal.id)
-      if (index !== -1) {
-        this.goals[index] = { ...this.editingGoal }
+      try {
+        await updateSavings(this.editingGoal.id, this.editingGoal)
         ElMessage({
           message: '目标已更新',
           type: 'success',
           offset: 60,
           customClass: 'top-message'
         })
+        this.editDialog = false
+        await this.get_goal()  // 重新获取列表
+      } catch (error) {
+        console.error('更新目标失败:', error)
+        ElMessage({
+          message: '更新失败：' + (error.response?.data || error.message),
+          type: 'error',
+          offset: 60,
+          customClass: 'top-message'
+        })
       }
-
-      this.editDialog = false
     },
     // 验证编辑的目标信息
     validateEditGoal() {
-      if (!this.editingGoal.name) {
+      if (!this.editingGoal.name?.trim()) {
         ElMessage({
           message: '请输入目标名称',
           type: 'warning',
@@ -575,7 +600,7 @@ export default {
         })
         return false
       }
-      if (!this.editingGoal.amount || this.editingGoal.amount <= 0) {
+      if (!this.editingGoal.targetAmount || this.editingGoal.targetAmount <= 0) {
         ElMessage({
           message: '请输入有效的目标金额',
           type: 'warning',
@@ -584,7 +609,7 @@ export default {
         })
         return false
       }
-      if (!this.editingGoal.date) {
+      if (!this.editingGoal.targetDate) {
         ElMessage({
           message: '请选择目标日期',
           type: 'warning',
@@ -596,40 +621,47 @@ export default {
       return true
     },
     // 删除目标
-    deleteGoal(goal) {
-      ElMessageBox.confirm(
-          '确定要删除这个目标吗？',
-          '警告',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-          }
-      )
-          .then(() => {
-            const index = this.goals.findIndex(g => g.id === goal.id)
-            if (index !== -1) {
-              this.goals.splice(index, 1)
-              ElMessage({
-                type: 'success',
-                message: '删除成功',
-                offset: 60,
-                customClass: 'top-message'
-              })
+    async deleteGoal(goal) {
+      try {
+        await ElMessageBox.confirm(
+            '确定要删除这个目标吗？',
+            '警告',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
             }
+        )
+
+        // 这里需要添加删除API调用
+        await deleteSavings(goal.id)
+
+        const index = this.goals.findIndex(g => g.id === goal.id)
+        if (index !== -1) {
+          this.goals.splice(index, 1)
+          ElMessage({
+            type: 'success',
+            message: '删除成功',
+            offset: 60,
+            customClass: 'top-message'
           })
-          .catch(() => {
-            ElMessage({
-              type: 'info',
-              message: '已取消删除',
-              offset: 60,
-              customClass: 'top-message'
-            })
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('删除目标失败:', error)
+          ElMessage({
+            type: 'error',
+            message: '删除失败：' + (error.response?.data || error.message),
+            offset: 60,
+            customClass: 'top-message'
           })
+        }
+      }
     }
   }
 }
 </script>
+
 
 <style scoped>
 .input-field {

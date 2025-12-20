@@ -1,7 +1,7 @@
 import request from './request';
 
-export function getBudgets(params) {
-    return request.get('/api/budgets', { params });
+export function getBudgets() {
+    return request.get('/api/budgets');
 }
 
 export function createBudget(data) {

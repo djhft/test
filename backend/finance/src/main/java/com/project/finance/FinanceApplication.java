@@ -1,11 +1,11 @@
 package com.project.finance;
 
-import org.mybatis.spring.annotation.MapperScan;
+//import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan("com.project.finance.mapper")
+//@MapperScan("com.project.finance.mapper")
 public class FinanceApplication {
 
     public static void main(String[] args) {

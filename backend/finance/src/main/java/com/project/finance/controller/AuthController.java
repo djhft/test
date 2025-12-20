@@ -27,14 +27,15 @@ public class AuthController {
 
     @PostMapping("/register")
     public Map<String, Object> register(@Valid @RequestBody RegisterParam p) {
-        System.out.println(p);
-        System.out.println("1111");
         Users exist = userService.findByEmailOrUsernameOrPhone(p.getEmail());
-        System.out.println("2222");
         if (exist != null) {
-            throw new RuntimeException("Email already exists");
+            throw new RuntimeException("邮箱已存在");
         }
-        System.out.println("3333");
+        exist = userService.findByEmailOrUsernameOrPhone(p.getPhone());
+        if (exist != null) {
+            throw new RuntimeException("手机号已存在");
+        }
+
         Users u = new Users();
         u.setEmail(p.getEmail());
         u.setPhone(p.getPhone());
@@ -42,7 +43,6 @@ public class AuthController {
         u.setPasswordHash(passwordEncoder.encode(p.getPassword()));
         u.setNickname(p.getUsername());
         userService.createUser(u);
-        System.out.println("4444");
         String token = jwtUtil.generateToken(u.getId());
         Map<String, Object> res = new HashMap<>();
         res.put("user", u);
@@ -52,22 +52,36 @@ public class AuthController {
 
     @PostMapping("/login")
     public Map<String, Object> login(@Valid @RequestBody LoginParam p) {
-        Users u = userService.findByEmailOrUsernameOrPhone(p.getUsernameOrEmailOrPhone());
-        if (u == null) throw new RuntimeException("Invalid credentials");
-        if (!passwordEncoder.matches(p.getPassword(), u.getPasswordHash())) throw new RuntimeException("Invalid credentials");
-        String token = jwtUtil.generateToken(u.getId());
-        Map<String, Object> res = new HashMap<>();
-        Map<String, Object> userDto = Map.of(
-                "id", u.getId(),
-                "nickname", u.getNickname(),
-                "email", u.getEmail(),
-                "username", u.getUsername(),
-                "avatar", u.getAvatar()
-        );
-        res.put("user", userDto);
-        res.put("token", token);
-        return res;
+        try {
+            Users u = userService.findByEmailOrUsernameOrPhone(p.getUsernameOrEmailOrPhone());
+            if (u == null) {
+                throw new RuntimeException("该用户不存在");
+            }
+
+            if (!passwordEncoder.matches(p.getPassword(), u.getPasswordHash())) {
+                throw new RuntimeException("密码错误");
+            }
+
+            String token = jwtUtil.generateToken(u.getId());
+
+            Map<String, Object> res = new HashMap<>();
+            Map<String, Object> userDto = Map.of(
+                    "id", u.getId(),
+                    "nickname", u.getNickname(),
+                    "email", u.getEmail(),
+                    "username", u.getUsername()
+            );
+            res.put("user", userDto);
+            res.put("token", token);
+
+            return res;
+        } catch (Exception e) {
+            System.out.println("登录出错: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // 重新抛出异常
+        }
     }
+
 
     @Data
     static class RegisterParam {

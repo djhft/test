@@ -1,7 +1,7 @@
 import request from './request';
 
-export function getSavings(params) {
-    return request.get('/api/savings_accounts', { params });
+export function getSavings() {
+    return request.get('/api/savings_accounts');
 }
 
 export function createSavings(data) {
