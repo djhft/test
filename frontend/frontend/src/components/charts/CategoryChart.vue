@@ -1,77 +1,97 @@
 <template>
-  <div class="chart-wrapper">
-    <canvas ref="canvas"></canvas>
-  </div>
+  <v-chart class="chart" :option="option" autoresize />
 </template>
 
 <script>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import Chart from 'chart.js/auto'
+// 引入 ECharts 核心
+import * as echarts from 'echarts/core'
+
+// 引入渲染器（必须！）
+import { CanvasRenderer } from 'echarts/renderers'
+
+// 引入图表类型
+import { PieChart } from 'echarts/charts'
+
+// 引入所需组件（新增 GraphicComponent）
+import {
+  TooltipComponent,
+  LegendComponent,
+  GraphicComponent  // ← 新增这一行
+} from 'echarts/components'
+
+// 注册所有用到的模块
+echarts.use([
+  CanvasRenderer,
+  PieChart,
+  TooltipComponent,
+  LegendComponent,
+  GraphicComponent  // ← 注册它
+])
+
+// 引入 vue-echarts 组件
+import VChart from 'vue-echarts'
 
 export default {
   name: 'CategoryChart',
+  components: { VChart },
   props: {
-    categoryData: {
-      type: Object,
-      required: true
+    data: {
+      type: Array,
+      label: { show: false },
+      labelLine: { show: false },
+      required: true,
+      default: () => []
     }
   },
-  setup(props) {
-    const canvas = ref(null)
-    let chart = null
+  computed: {
+    option() {
+      let dataArray = Array.isArray(this.data)
+          ? this.data
+          : (Array.isArray(this.data?.data) ? this.data.data : [])
 
-    const initChart = () => {
-      chart = new Chart(canvas.value.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-          labels: props.categoryData.labels || [],
-          datasets: [{
-            data: props.categoryData.data || [],
-            backgroundColor: [
-              '#ef4444',
-              '#3b82f6',
-              '#f59e0b',
-              '#10b981',
-              '#8b5cf6',
-              '#ec4899'
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              maxHeight: 80   // ⭐ 防止无限撑高
-            }
-          }
-        }
-      })
+      const seriesData = dataArray
+          .filter(item => item && typeof item === 'object')
+          .map(item => ({
+            name: item.name || '未分类',
+            value: parseFloat(item.totalAmount) || 0
+          }))
+          .filter(item => item.value > 0)
+
+      // if (seriesData.length === 0) {
+      //   return {
+      //     // 使用 graphic 显示提示文字 → 必须注册 GraphicComponent
+      //     graphic: {
+      //       type: 'text',
+      //       left: 'center',
+      //       top: 'middle',
+      //       style: {
+      //         text: '暂无支出数据',
+      //         fontSize: 14,
+      //         fill: '#999'
+      //       }
+      //     }
+      //   }
+      // }
+
+      return {
+        tooltip: { trigger: 'item', formatter: '{b}: ¥{c} ({d}%)' },
+        legend: { orient: 'horizontal', bottom: '2%', left: 'center' },
+        series: [{
+          type: 'pie',
+          radius: ['40%', '70%'],
+          data: seriesData,
+          label: { show: false },
+          emphasis: { label: { show: true, fontSize: '14' } }
+        }]
+      }
     }
-
-    watch(
-        () => props.categoryData,
-        (val) => {
-          if (!chart) return
-          chart.data.labels = val.labels || []
-          chart.data.datasets[0].data = val.data || []
-          chart.update()
-        },
-        { deep: true }
-    )
-
-    onMounted(initChart)
-    onBeforeUnmount(() => chart?.destroy())
-
-    return { canvas }
   }
 }
 </script>
 
 <style scoped>
-.chart-wrapper {
+.chart {
+  width: 100%;
   height: 300px;
-  overflow: hidden; /* 最后一道保险 */
 }
 </style>

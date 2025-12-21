@@ -2,7 +2,6 @@
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex">
-        <!-- 内容区域 -->
         <div class="flex-1 lg:ml-64 min-w-0 py-8">
           <!-- Header -->
           <header class="mb-8 animate-fade-in">
@@ -143,20 +142,20 @@
                 </h3>
               </div>
               <!-- 这里是关键修复 -->
-              <CategoryChart :category-data="categoryData" />
+              <CategoryChart :data="categoryData" />
             </div>
           </div>
 
-          <div class="bg-white rounded-xl shadow-sm p-5 mb-8">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-semibold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-chart-bar text-gray-400"></i>
-                月度统计
-              </h3>
-            </div>
-            <MonthlyChart :data="monthlyData" />
+          <!--          <div class="bg-white rounded-xl shadow-sm p-5 mb-8">-->
+          <!--            <div class="flex items-center justify-between mb-4">-->
+          <!--              <h3 class="text-base font-semibold text-gray-800 flex items-center gap-2">-->
+          <!--                <i class="fas fa-chart-bar text-gray-400"></i>-->
+          <!--                月度统计-->
+          <!--              </h3>-->
+          <!--            </div>-->
+          <!--            <MonthlyChart :data="monthlyData" />-->
 
-          </div>
+          <!--          </div>-->
 
 
           <!-- AI 分析 -->
@@ -257,17 +256,20 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import TrendChart from '@/components/Charts/TrendChart.vue'
 import CategoryChart from '@/components/Charts/CategoryChart.vue'
 import MonthlyChart from '@/components/Charts/MonthlyChart.vue'
 import OverviewCard from '@/components/OverviewCard.vue'
 import { aiAnalysis } from '@/api/ai'
 import { getSummary } from '@/api/stats'
-import {getExpenseSummary, getIncomeSummary, getSpending, getTransactions} from "@/api/transaction.js"
+import { getExpenseSummary, getIncomeSummary, getSpending, getTransactions } from '@/api/transaction.js'
+
 import incomeIcon from '@/assets/total_income.png'
 import expenseIcon from '@/assets/total_expenditures.png'
 import balanceIcon from '@/assets/surplus.png'
+
+/* 你原来的所有 icon import 全部保留 */
 import eat from "@/assets/icon/eat.png";
 import shopping from "@/assets/icon/shopping.png";
 import sock from "@/assets/icon/sock.png";
@@ -292,22 +294,12 @@ export default {
     TrendChart,
     CategoryChart,
     MonthlyChart,
-    OverviewCard,
+    OverviewCard
   },
+
   setup() {
     const dialogVisible = ref(false)
-    const dateRange = ref([])
     const currentPreset = ref('month')
-    const currentPage = ref(1)
-    const pageSize = ref(10)
-    const total = ref(0)
-
-    const format = (d) => {
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
-      const day = String(d.getDate()).padStart(2, '0')
-      return `${y}-${m}-${day}`
-    }
 
     const dateShortcuts = [
       {
@@ -346,40 +338,28 @@ export default {
       { label: '本年', value: 'year' }
     ]
 
-    // 初始化日期范围
-    const start = new Date()
-    start.setDate(1) // 设置为本月第一天
-    const end = new Date()
-    dateRange.value = [format(start), format(end)]
-
     return {
       dialogVisible,
-      dateRange,
       currentPreset,
       dateShortcuts,
       datePresets,
       incomeIcon,
       expenseIcon,
-      balanceIcon,
-      currentPage,
-      pageSize,
-      total
+      balanceIcon
     }
   },
+
   data() {
     return {
       totalIncome: 0,
       totalExpense: 0,
       aiReport: null,
+      dateRange: [],
       allTransactions: [],
       loading: false,
-      allTxLoading: false,
       aiLoading: false,
       trendData: [],
-      categoryData: {
-        labels:[],
-        data:[]
-      },
+      categoryData: [],
       monthlyData: [],
       consume_grids: [
         { id: 1, image: eat, text: "三餐" },
@@ -405,21 +385,21 @@ export default {
       ]
     }
   },
+
   computed: {
     balance() {
       return this.totalIncome - this.totalExpense
     }
   },
+
   watch: {
-    dateRange: {
-      immediate: true,
-      handler(newRange) {
-        if (newRange && newRange.length === 2) {
-          this.fetchData()
-        }
+    dateRange(newVal) {
+      if (newVal && newVal.length === 2) {
+        this.fetchData()
       }
     }
   },
+
   methods: {
     formatDate(dateStr) {
       if (!dateStr) return ''
@@ -477,13 +457,13 @@ export default {
 
         // 🔴 统一在这里调用
         await this.getSpend()
+        await this.getExpenseSum()
         await this.fetchAllTransactions()
 
       } finally {
         this.loading = false
       }
-    }
-    ,
+    },
 
     async fetchAllTransactions() {
       this.allTxLoading = true
@@ -539,9 +519,13 @@ export default {
     },
 
     onDateRangeChange() {
-      // 日期范围变化时触发数据获取
-      if (this.dateRange && this.dateRange.length === 2) {
-        this.fetchData()
+      this.currentPreset = ''
+    },
+
+    onCalendarChange(dates) {
+      // 日历选择变化时更新日期范围
+      if (dates && dates.length === 2) {
+        this.dateRange = dates
       }
     },
 
@@ -569,9 +553,10 @@ export default {
       }
     },
 
-    async getIncomeSum() {
+    async getIncomeSum()
+    {
       try{
-        const now = new Date();
+        new Date();
         const res = await getIncomeSummary(
             {
               start: this.dateRange[0],
@@ -579,7 +564,6 @@ export default {
             },
 
         )
-        console.log(res.data)
       } catch (error) {
         console.error('获取收入汇总失败:', error)
         this.$message?.error('获取收入汇总失败')
@@ -594,8 +578,9 @@ export default {
               end: this.dateRange[1],
             },
 
+
         )
-        console.log(res.data)
+        this.trendData = res.data
       } catch (error) {
         console.error('获取支出汇总失败:', error)
         this.$message?.error('获取支出汇总失败')
@@ -609,20 +594,27 @@ export default {
           end: this.dateRange[1],
         })
 
-        const labels = []
-        const data = []
+        // 通常 res.data 才是你要的数组
+        const rawData = Array.isArray(res.data) ? res.data : []
 
-        res.data.forEach(item => {
-          if (!item || !item.categoryId) return
-          labels.push(this.getConsumeName(item.categoryId))
-          data.push(Number(item.totalAmount || 0))
-        })
-
-        // 关键：整体替换，而不是 push
-        this.categoryData = {
-          labels,
-          data
-        }
+        this.categoryData = rawData.map(item => ({
+          ...item,
+          name: this.getConsumeName(item.categoryId)
+        }))
+        // const labels = []
+        // const data = []
+        //
+        // res.data.forEach(item => {
+        //   if (!item || !item.categoryId) return
+        //   labels.push(this.getConsumeName(item.categoryId))
+        //   data.push(Number(item.totalAmount || 0))
+        // })
+        //
+        // // 关键：整体替换，而不是 push
+        // this.categoryData = {
+        //   labels,
+        //   data
+        // }
 
       } catch (error) {
         console.error(error)
@@ -638,14 +630,13 @@ export default {
     handleCurrentChange(val) {
       this.currentPage = val
       this.fetchAllTransactions()
-    }
+    },
   },
   created() {
-    // 在created生命周期中初始化数据
-    this.fetchData()
-    this.getIncomeSum()
-    this.getExpenseSum()
-
+    const start = new Date()
+    start.setDate(1)
+    const end = new Date()
+    this.dateRange = [this.format(start), this.format(end)]
   }
 }
 </script>
@@ -736,6 +727,3 @@ export default {
   border-radius: 4px;
 }
 </style>
-
-
-

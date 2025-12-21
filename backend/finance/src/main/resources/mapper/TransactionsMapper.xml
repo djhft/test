@@ -23,7 +23,6 @@
         FROM transactions
         where user_id = #{uid}
           and date BETWEEN #{start} AND #{end}
-          and type = 'EXPENSE'
         GROUP BY date,type;
 
     </select>
