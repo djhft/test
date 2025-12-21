@@ -1,28 +1,39 @@
 <template>
   <div>
     <div class="border-2 border-dashed border-primary rounded-lg p-4 text-center">
-      <div class="mb-2">
-        <i class="fa fa-camera text-primary text-3xl"></i>
-      </div>
-      <p class="text-gray-500 mb-1 font-medium">直接上传图片即可自动识别账单信息</p>
-      <p class="text-gray-400 text-xs mb-3">支持JPG、PNG格式，单张不超过5MB</p>
-
-      <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFile" />
-      <div class="flex justify-center gap-3">
-        <button v-if="!uploadedUrl" type="button" class="btn-primary" @click="trigger">上传消费截图或发票</button>
-        <button v-if="uploadedUrl" type="button" class="btn-secondary" @click="clear">清除</button>
+      <!-- 加载状态 -->
+      <div v-if="isLoading" class="py-4">
+        <div class="flex flex-col items-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-3"></div>
+          <p class="text-gray-500 text-sm">正在识别中，请稍候...</p>
+        </div>
       </div>
 
-      <div v-if="uploadedUrl" class="mt-3 flex justify-center">
-        <div class="relative group">
-          <div class="w-20 h-20 overflow-hidden rounded-md border">
-            <img :src="uploadedUrl" class="object-cover w-full h-full" />
+      <!-- 上传区域 -->
+      <div v-else>
+        <div class="mb-2">
+          <i class="fa fa-camera text-primary text-3xl"></i>
+        </div>
+        <p class="text-gray-500 mb-1 font-medium">直接上传图片即可自动识别账单信息</p>
+        <p class="text-gray-400 text-xs mb-3">支持JPG、PNG格式，单张不超过5MB</p>
+
+        <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFile" />
+        <div class="flex justify-center gap-3">
+          <button v-if="!uploadedUrl" type="button" class="btn-primary" @click="trigger">上传消费截图或发票</button>
+          <button v-if="uploadedUrl" type="button" class="btn-secondary" @click="clear">清除</button>
+        </div>
+
+        <div v-if="uploadedUrl" class="mt-3 flex justify-center">
+          <div class="relative group">
+            <div class="w-20 h-20 overflow-hidden rounded-md border">
+              <img :src="uploadedUrl" class="object-cover w-full h-full" />
+            </div>
+            <button
+                @click="clear"
+                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <i class="fas fa-times text-xs"></i>
+            </button>
           </div>
-          <button
-              @click="clear"
-              class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <i class="fas fa-times text-xs"></i>
-          </button>
         </div>
       </div>
     </div>
@@ -37,10 +48,11 @@ export default {
   name: 'Uploader',
   data() {
     return {
-      filename:null,
+      filename: null,
       file: null,
       preview: null,
-      uploadedUrl: null
+      uploadedUrl: null,
+      isLoading: false // 添加加载状态
     }
   },
   methods: {
@@ -55,20 +67,18 @@ export default {
       this.preview = null;
       this.uploadedUrl = null;
       this.filename = null;
+      this.isLoading = false;
       this.$emit('clear');
       this.$emit('uploaded', null);
     },
     async clear() {
       try {
-
         if (this.filename) {
-
           await deleteImage(this.filename);
           ElMessage.success('图片删除成功');
           if (this.preview) {
             URL.revokeObjectURL(this.preview);
           }
-
         }
       } catch (error) {
         console.error('删除服务器图片失败:', error);
@@ -78,6 +88,7 @@ export default {
         this.preview = null;
         this.uploadedUrl = null;
         this.filename = null;
+        this.isLoading = false;
         this.$emit('clear');
         this.$emit('uploaded', null);
       }
@@ -105,6 +116,7 @@ export default {
 
       this.file = chosen
       this.preview = URL.createObjectURL(chosen)
+      this.isLoading = true // 开始加载
 
       try {
         const formData = new FormData()
@@ -115,7 +127,7 @@ export default {
         if (url) {
           this.uploadedUrl = url
           this.filename = response.data.filename
-          this.$emit('uploaded', url)
+          this.$emit('uploaded', response.data)
           ElMessage.success('图片上传成功')
         } else {
           throw new Error('上传响应中没有URL')
@@ -135,10 +147,11 @@ export default {
         } else {
           ElMessage.error('上传失败: ' + err.message)
         }
-        this.clear()
+        await this.clear()
+      } finally {
+        this.isLoading = false // 结束加载
       }
     }
-
   },
   beforeUnmount() {
     if (this.preview) {
@@ -148,18 +161,4 @@ export default {
 }
 </script>
 
-<style scoped>
-.group:hover .group-hover\:opacity-100 {
-  opacity: 1;
-}
-
-.opacity-0 {
-  opacity: 0;
-}
-
-.transition-opacity {
-  transition-property: opacity;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-</style>
+<codegeex-cursor></codegeex-cursor>

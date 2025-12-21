@@ -9,26 +9,12 @@ import com.project.finance.entity.Transactions;
 import com.project.finance.service.ITransactionsService;
 import com.project.finance.util.JsonUtil;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.ibatis.transaction.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+
 
 /**
  * <p>
@@ -185,11 +171,7 @@ public class TransactionsController {
             @RequestParam(required = false) String end,
             HttpServletRequest request) {
         try{
-            System.out.println("11111111");
-            System.out.println(start);
-            System.out.println(end);
             Long uid = (Long) request.getAttribute("userId");
-            System.out.println(uid);
             return transactionService.findIncomeSummaryByUserIdAndTypeAndDateBetween(uid, start, end);
         } catch (Exception e){
             System.out.println(e.getMessage());

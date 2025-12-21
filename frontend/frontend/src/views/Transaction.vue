@@ -189,11 +189,33 @@ export default {
     setTab(t){
       this.tab = t;
       this.form.type = t==='income' ? 'INCOME' : 'EXPENSE';
-      this.form.category = '';
+      // this.form.category = '';
     },
-    onUploaded(urls) {
-      this.form.attachmentUrls = urls;
+    onUploaded(data) {
+      this.form.attachmentUrls = data.url;
+      this.form.amount = data.amount;
+      this.tab = data.type.toLowerCase(); // 确保是小写
+      this.form.description = data.description;
+
+      // 在下一个tick设置分类，确保tab已经切换
+      this.$nextTick(() => {
+        // 将categoryId转换为数字
+        const categoryId = Number(data.categoryId);
+
+        // 验证分类ID是否有效
+        const validCategories = this.tab === 'expense'
+            ? this.consume_grids.map(g => Number(g.id)) // 确保也是数字
+            : this.income_grids.map(g => Number(g.id));
+
+        if (validCategories.includes(categoryId)) {
+          this.form.category = categoryId; // 使用数字类型的categoryId
+        } else {
+          console.warn('无效的分类ID:', categoryId);
+          this.form.category = '';
+        }
+      });
     },
+
     async save() {
       this.showError = true;
       if (!this.form.category) {

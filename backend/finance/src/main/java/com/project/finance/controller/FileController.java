@@ -1,5 +1,7 @@
 package com.project.finance.controller;
 
+import com.project.finance.DTO.TransactionDTO;
+import com.project.finance.util.ImageRecognition;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -70,11 +72,19 @@ public class FileController {
             Path filePath = uploadPath.resolve(newFilename);
             Files.copy(file.getInputStream(), filePath);
 
+            System.out.println(filePath);
+            TransactionDTO transaction = ImageRecognition.imageRecognition(filePath);
+
             // 返回文件访问URL
             String fileUrl = serverUrl + "/api/files/" + newFilename;
             return ResponseEntity.ok(Map.of(
                     "url", fileUrl,
-                    "filename", newFilename
+                    "filename", newFilename,
+                    "type", transaction.getType(),
+                    "categoryId", transaction.getCategoryId().toString(),
+                    "amount", transaction.getAmount(),
+                    "date", transaction.getDate(),
+                    "description", transaction.getDescription()
             ));
 
         } catch (Exception e) {
@@ -115,7 +125,6 @@ public class FileController {
     @DeleteMapping("/image/{filename:.+}")
     public ResponseEntity<Map<String, String>> deleteFile(@PathVariable String filename) {
         try {
-            System.out.println(filename);
             Path filePath = getUploadPath().resolve(filename);
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
