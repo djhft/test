@@ -88,4 +88,10 @@ public class TransactionsServiceImpl extends ServiceImpl<TransactionsMapper, Tra
     public List<SummaryDTO> findIncomeSummaryByUserIdAndTypeAndDateBetween(Long uid, String start, String end) {
         return transactionMapper.findIncomeSummaryByUserIdAndTypeAndDateBetween(uid, start, end);
     }
+
+    //根据时间获取收支数据
+    @Override
+    public List<Transactions> findByUserIdAndDateBetween(Long uid, String start, String end) {
+        return transactionMapper.findByUserIdAndDateBetween(uid, start, end);
+    }
 }

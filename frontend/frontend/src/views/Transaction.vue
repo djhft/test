@@ -192,10 +192,17 @@ export default {
       // this.form.category = '';
     },
     onUploaded(data) {
-      this.form.attachmentUrls = data.url;
-      this.form.amount = data.amount;
-      this.tab = data.type.toLowerCase(); // 确保是小写
-      this.form.description = data.description;
+      if (data != null){
+        this.form.attachmentUrls = data.url;
+        this.form.amount = data.amount;
+        this.tab = data.type.toLowerCase(); // 确保是小写
+        this.form.description = data.description;
+      }
+      else {
+        this.form.attachmentUrls = '';
+        return;
+      }
+
 
       // 在下一个tick设置分类，确保tab已经切换
       this.$nextTick(() => {

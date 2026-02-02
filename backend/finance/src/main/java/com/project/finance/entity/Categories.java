@@ -24,31 +24,14 @@ import lombok.experimental.Accessors;
 @TableName("categories")
 public class Categories implements Serializable {
 
-    private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id")
     private Long id;
-
-    @TableField("user_id")
-    private Long userId;
 
     @TableField("name")
     private String name;
 
     @TableField("type")
     private String type;
-
-    @TableField("icon")
-    private String icon;
-
-    @TableField("color")
-    private String color;
-
-    @TableField("created_at")
-    private LocalDateTime createdAt;
-
-    @TableField("updated_at")
-    private LocalDateTime updatedAt;
-
 
 }

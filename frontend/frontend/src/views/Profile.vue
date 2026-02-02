@@ -8,9 +8,6 @@
 
       <div class="bg-white rounded-2xl shadow-card p-4 sm:p-6">
         <div class="flex items-center gap-4 mb-4">
-          <div class="w-20 h-20 rounded-full bg-gray-100 overflow-hidden">
-            <img :src="user.avatar || defaultAvatar" alt="avatar" class="w-full h-full object-cover" />
-          </div>
           <div>
             <div class="text-lg font-medium text-gray-800">{{ user.nickname || user.username }}</div>
             <div class="text-sm text-gray-500">{{ user.email || user.phone }}</div>

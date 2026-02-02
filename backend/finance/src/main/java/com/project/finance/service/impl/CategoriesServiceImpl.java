@@ -23,37 +23,11 @@ public class CategoriesServiceImpl extends ServiceImpl<CategoriesMapper, Categor
     @Autowired
     private CategoriesMapper categoryMapper;
 
-    @Override
-    public List<Categories> list(Long userId, String type) {
-        QueryWrapper<Categories> qw = new QueryWrapper<>();
-        if (type != null) qw.eq("type", type);
-        // system (user_id is null) OR user_id = current user
-        qw.and(wrapper -> wrapper.isNull("user_id").or().eq("user_id", userId));
-        return categoryMapper.selectList(qw);
-    }
 
     @Override
-    public Categories create(Categories c) {
-        categoryMapper.insert(c);
-        return c;
-    }
-
-    @Override
-    public Categories update(Long id, Categories c, Long userId) {
-        Categories exist = categoryMapper.selectById(id);
-        if (exist == null) throw new RuntimeException("Category not found");
-        if (exist.getUserId() != null && !exist.getUserId().equals(userId)) throw new RuntimeException("Forbidden");
-        c.setId(id);
-        c.setUserId(exist.getUserId());
-        categoryMapper.updateById(c);
-        return categoryMapper.selectById(id);
-    }
-
-    @Override
-    public void delete(Long id, Long userId) {
-        Categories exist = categoryMapper.selectById(id);
-        if (exist == null) throw new RuntimeException("Category not found");
-        if (exist.getUserId() != null && !exist.getUserId().equals(userId)) throw new RuntimeException("Forbidden");
-        categoryMapper.deleteById(id);
+    public String typechange(Long id) {
+        QueryWrapper <Categories> qw = new QueryWrapper<>();
+        qw.eq("id", id);
+        return categoryMapper.selectOne(qw).getName();
     }
 }

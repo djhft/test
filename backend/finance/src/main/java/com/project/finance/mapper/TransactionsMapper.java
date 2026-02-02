@@ -24,4 +24,6 @@ public interface TransactionsMapper extends BaseMapper<Transactions> {
     List<SummaryDTO> findSummaryByUserIdAndTypeAndDateBetween(Long uid, String start, String end);
 
     List<SummaryDTO> findIncomeSummaryByUserIdAndTypeAndDateBetween(Long uid, String start, String end);
+
+    List<Transactions> findByUserIdAndDateBetween(Long uid, String start, String end);
 }

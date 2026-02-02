@@ -31,4 +31,7 @@ public interface ITransactionsService extends IService<Transactions> {
     List<SummaryDTO> findExpenseSummaryByUserIdAndTypeAndDateBetween(Long uid, String start, String end);
 
     List<SummaryDTO> findIncomeSummaryByUserIdAndTypeAndDateBetween(Long uid, String start, String end);
+
+    //根据时间获取收支数据
+    List<Transactions> findByUserIdAndDateBetween(Long uid, String start, String end);
 }

@@ -14,8 +14,7 @@ import java.util.List;
  * @since 2025-12-14
  */
 public interface ICategoriesService extends IService<Categories> {
-    List<Categories> list(Long userId, String type);
-    Categories create(Categories c);
-    Categories update(Long id, Categories c, Long userId);
-    void delete(Long id, Long userId);
+
+
+    String typechange(Long id);
 }
